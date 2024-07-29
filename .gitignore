@@ -1,5 +1,5 @@
 api/target/
 **/*.rs.bk
 
-/Cargo.lock
+api/Cargo.lock
 Cargo.lock
