@@ -1,5 +1,0 @@
-########## Rust #############
-docker build -t rust-dev .
-docker run -it --rm -p 8080:8080 -v $(pwd):/home/rustacean rust-dev
-
-######### Database ##########
