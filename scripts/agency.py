@@ -1,8 +1,17 @@
+from sqlalchemy import Column, Integer, String, Float
+from base import Base
 import requests
 import os
 import csv
 import datetime
 current_dir = os.path.dirname(os.path.abspath(__file__))
+
+
+class AgencyBudget(Base):
+    __tablename__ = 'agency_budget'
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    agency = Column(String(255))
+    budget = Column(Float)
 
 
 def fetch_agency_codes():
@@ -67,12 +76,22 @@ def record_updated_at():
         file.write(f'\nagency budget data updated on: {today}')
 
 
+def add_agency_budgets(session):
+    agency_file_name = os.path.join(current_dir, 'data', 'agency_resources.csv')
+    with open(agency_file_name, mode='r') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            agency_budget = AgencyBudget(agency=row['Agency'], budget=row['Budget'])
+            session.add(agency_budget)
+    session.commit()
+    print('agency budget table updated')
+
+
 def get_agency_data(session):
-    print(session)
     # populates data/agency_codes.csv and data/agency_resources.csv
-    # fetch_agency_codes()
-    # fetch_budget_resources()
-    # record_updated_at()
+    fetch_agency_codes()
+    fetch_budget_resources()
+    record_updated_at()
 
     # adds data from the csv files to the database
-    # add_agency_budges(sessioin)
+    add_agency_budgets(session)

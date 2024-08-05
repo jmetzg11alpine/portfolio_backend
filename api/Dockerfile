@@ -14,5 +14,3 @@ RUN chown -R rustacean:rustacean /usr/local/cargo/registry
 USER rustacean
 
 EXPOSE 8080
-
-CMD ["cargo", "watch", "-x", "run"]
