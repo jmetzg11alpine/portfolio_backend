@@ -3,3 +3,7 @@ api/target/
 
 api/Cargo.lock
 Cargo.lock
+
+scripts/venv
+scripts/data/*
+scripts/__pycache__

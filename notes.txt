@@ -2,4 +2,9 @@
 docker build -t rust-dev .
 docker run -it --rm -p 8080:8080 -v $(pwd):/home/rustacean rust-dev
 
+# production
+docker build -t rust-prod .
+docker run -d -p 8080:8080 rust-prod
+
+
 ######### Database ##########
