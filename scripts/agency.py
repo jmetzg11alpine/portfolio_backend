@@ -89,9 +89,9 @@ def add_agency_budgets(session):
 
 def get_agency_data(session):
     # populates data/agency_codes.csv and data/agency_resources.csv
-    fetch_agency_codes()
-    fetch_budget_resources()
-    record_updated_at()
+    # fetch_agency_codes()
+    # fetch_budget_resources()
+    # record_updated_at()
 
     # adds data from the csv files to the database
     add_agency_budgets(session)

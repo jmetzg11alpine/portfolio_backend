@@ -8,3 +8,19 @@ docker run -d -p 8080:8080 rust-prod
 
 
 ######### Database ##########
+
+
+
+
+########## Docker ###############
+docker logs [container id or image id]
+docker exec -it [container_id] sh
+mysql -u root -p
+(enter password) P@ssw0rd
+SHOW DATABASES;
+USE portfolio;
+SHOW TABLES;
+(deleting tables with foreign keys)
+SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE name;
+SET FOREIGN_KEY_CHECKS = 1;
