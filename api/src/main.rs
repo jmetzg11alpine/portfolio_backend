@@ -1,5 +1,7 @@
-use actix_web::{get, App, HttpResponse, HttpServer, Responder};
+use actix_web::{get, App, HttpResponse, HttpServer, Responder, web};
 use actix_cors::Cors;
+use sqlx::mysql::MySqlPool;
+use std::env;
 
 mod budget;
 
@@ -10,7 +12,10 @@ async fn hello() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| {
+    let database_url = env::var("MYSQL_URL").expect("MYSQL_URL must be set");
+    let pool = MySqlPool::connect(&database_url).await.expect("Failed to creat pool");
+
+    HttpServer::new(move || {
         App::new()
             .wrap(
                 Cors::default()
@@ -19,8 +24,9 @@ async fn main() -> std::io::Result<()> {
                     .allowed_headers(vec![actix_web::http::header::CONTENT_TYPE])
                     .max_age(3600)
             )
+            .app_data(web::Data::new(pool.clone()))
             .service(hello)
-            .service(budget::endpoints::get_budget)
+            .service(budget::endpoints::get_agency)
             .service(budget::endpoints::post_foreign_aid)
             .service(budget::endpoints::get_comparison)
             .service(budget::endpoints::get_info)
