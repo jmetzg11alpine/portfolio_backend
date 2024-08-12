@@ -1,11 +1,12 @@
 from urllib.parse import quote
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker
 import os
 import time
 from dotenv import load_dotenv
 from base import Base
 from agency import get_agency_data
+from foreign_aid import get_foreign_aid
 
 load_dotenv()
 
@@ -36,4 +37,5 @@ if __name__ == "__main__":
     session = connect_to_database(DATABASE_URL)
     if session:
         get_agency_data(session)
+        get_foreign_aid(session)
         session.close()

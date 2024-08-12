@@ -25,7 +25,7 @@ pub fn process_agency_data(
     let mut other_data = Vec::new();
     let mut main_other_value = 0.0;
     let mut other_other_value = 0.0;
-    let mut table_labels = Vec::new();
+    let mut table_data = Vec::new();
 
     for (i, row) in rows.iter().enumerate() {
         let agency = row.agency.as_deref().unwrap_or("unknown agency");
@@ -50,7 +50,7 @@ pub fn process_agency_data(
         } else {
             main_other_value += budget;
             other_other_value += budget;
-            table_labels.push((agency.to_string(), budget));
+            table_data.push((agency.to_string(), budget));
         }
     }
     main_data.push(AgencyEntry {
@@ -61,11 +61,11 @@ pub fn process_agency_data(
     });
 
     other_data.push(AgencyEntry {
-        label: format!("{} others", table_labels.len()),
+        label: format!("{} others", table_data.len()),
         value: other_other_value,
         tooltip: ("break down described below").to_string(),
         background_color: format!("rgba({}, 1)", colors[9]),
     });
 
-    (main_data, other_data, table_labels)
+    (main_data, other_data, table_data)
 }

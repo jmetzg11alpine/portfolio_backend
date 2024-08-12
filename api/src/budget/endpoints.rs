@@ -13,16 +13,39 @@ async fn get_agency(pool: web::Data<MySqlPool>) -> impl Responder {
 
     match result {
       Ok(rows) => {
-        let (main_data, other_data, table_labels) = process_agency_data(&rows);
-            HttpResponse::Ok().json(json!({
-                "main_data": main_data,
-                "other_data": other_data,
-                "table_labels": table_labels
-            }))
+        let (main_data, other_data, table_data) = process_agency_data(&rows);
+
+        HttpResponse::Ok().json(json!({
+            "main_data": main_data,
+            "other_data": other_data,
+            "table_data": table_data
+        }))
     }
          Err(e) => {
             eprintln!("Failed to execute query: {}", e);
-            HttpResponse::InternalServerError().json(json!({"error": "Failed to retrieve data"}))
+            HttpResponse::InternalServerError().json(json!({"error": "Failed to agency budget"}))
+        }
+    }
+}
+
+#[derive(Serialize)]
+struct Country{
+    country: Option<String>,
+}
+
+#[get("/get_countries")]
+async fn get_countries(pool: web::Data<MySqlPool>) -> impl Responder {
+    let result = query_as!(Country, "SELECT DISTINCT country FROM foreign_aid ORDER BY country").fetch_all(pool.get_ref()).await;
+
+    match result {
+        Ok(countries) => {
+            let mut country_names: Vec<String> = countries.into_iter().filter_map(|c| c.country).collect();
+            country_names.insert(0, "all".to_string());
+            HttpResponse::Ok().json(json!({"countries": country_names}))
+        },
+        Err(e) => {
+            eprintln!("Failed to get countries: {}", e);
+            HttpResponse::InternalServerError().json(json!({"error": "Failed to retrieve countries"}))
         }
     }
 }
@@ -30,13 +53,20 @@ async fn get_agency(pool: web::Data<MySqlPool>) -> impl Responder {
 
 #[derive(Deserialize, Serialize)]
 struct ForeignAidRequest {
-    key: String
+    country: String,
+    year: String
 }
 
-#[post("/foreignAid")]
-async fn post_foreign_aid(budget_request: web::Json<ForeignAidRequest>) -> impl Responder {
-    println!("post foreignAid");
-    HttpResponse::Ok().json(budget_request.into_inner())
+#[post("/foreign_aid")]
+async fn post_foreign_aid(filters: web::Json<ForeignAidRequest>, pool: web::Data<MySqlPool>) -> impl Responder {
+    let ForeignAidRequest {country, year} = filters.into_inner();
+    let base_query = "SELECT * FROM foreign_aid"
+    if year != "all":
+        query += " WHERE year == {year}"
+    else if countr != "all":
+        query += " AND WHERE country == {country}"
+    println!("{}, {}", country, year);
+    HttpResponse::Ok().json(&ForeignAidRequest {country, year})
 }
 
 #[get("/comparison")]
