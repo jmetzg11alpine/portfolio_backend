@@ -1,9 +1,8 @@
 use actix_web::{post, get, web, HttpResponse, Responder};
-use serde::{Deserialize, Serialize};
-use sqlx::MySqlPool;
-use sqlx::query_as;
+use serde::{Serialize, Deserialize};
+use sqlx::{MySqlPool, query_as};
 use serde_json::json;
-use crate::budget::helpers::{process_agency_data, AgencyBudget};
+use crate::budget::helpers::{process_agency_data, AgencyBudget, make_map_data};
 
 
 #[get("/agency")]
@@ -51,22 +50,18 @@ async fn get_countries(pool: web::Data<MySqlPool>) -> impl Responder {
 }
 
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize)]
 struct ForeignAidRequest {
     country: String,
     year: String
 }
-
 #[post("/foreign_aid")]
 async fn post_foreign_aid(filters: web::Json<ForeignAidRequest>, pool: web::Data<MySqlPool>) -> impl Responder {
     let ForeignAidRequest {country, year} = filters.into_inner();
-    let base_query = "SELECT * FROM foreign_aid"
-    if year != "all":
-        query += " WHERE year == {year}"
-    else if countr != "all":
-        query += " AND WHERE country == {country}"
+
     println!("{}, {}", country, year);
-    HttpResponse::Ok().json(&ForeignAidRequest {country, year})
+    let results = make_map_data(&year, &pool).await;
+    HttpResponse::Ok().json(results)
 }
 
 #[get("/comparison")]

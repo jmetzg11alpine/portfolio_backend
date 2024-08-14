@@ -1,5 +1,7 @@
 use crate::budget::data::{get_colors, get_renaming_map};
 use serde::Serialize;
+use sqlx::{FromRow, MySqlPool};
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug)]
 pub struct AgencyBudget {
@@ -68,4 +70,96 @@ pub fn process_agency_data(
     });
 
     (main_data, other_data, table_data)
+}
+
+#[derive(FromRow)]
+pub struct ForeignAidMapResults {
+    country: String,
+    amount: f32,
+    lat: f32,
+    lng: f32
+}
+
+#[derive(Serialize)]
+pub struct MapData {
+    lat: f32,
+    lng: f32,
+    text: String,
+    size: f32,
+    amount: f32,
+}
+
+#[derive(Serialize)]
+pub struct MapResults {
+    map_data: Vec<MapData>,
+    countries: Vec<String>
+}
+
+pub async fn make_map_data(year: &str, pool: &MySqlPool) -> MapResults {
+    let year_query = if year != "all" {
+        format!("SELECT * FROM foreign_aid WHERE year = {}", year)
+    } else {
+        String::from("SELECT * FROM foreign_aid")
+    };
+   let results = sqlx::query_as::<_, ForeignAidMapResults>(&year_query).fetch_all(pool).await.expect("Failed to fetch data");
+
+    prep_map_data(results, &year)
+}
+
+
+fn prep_map_data(results: Vec<ForeignAidMapResults>, year: &str) -> MapResults {
+    let mut country_map: HashMap<String, MapData> = HashMap::new();
+    let mut unique_countries: HashSet<String> = HashSet::new();
+
+    for row in results.iter() {
+        let country = row.country.clone();
+        unique_countries.insert(country.clone());
+
+        if let Some(map_data) = country_map.get_mut(&country) {
+            map_data.amount += row.amount;
+        } else {
+            let new_map_data = MapData {
+                lat: row.lat,
+                lng: row.lng,
+                text: country.clone(),
+                size: 0.0,
+                amount: row.amount,
+            };
+            country_map.insert(country, new_map_data);
+        }
+
+    }
+
+    let min_amount = country_map.values().map(|data| data.amount).fold(f32::MAX, f32::min);
+    let max_amount = country_map.values().map(|data| data.amount).fold(f32::MIN, f32::max);
+
+    for map_data in country_map.values_mut() {
+        map_data.size = normalize_amount(map_data.amount, min_amount, max_amount);
+        map_data.text = make_map_text(year, &map_data.text);
+    }
+
+    let map_data = country_map.into_values().collect();
+
+    let mut countries: Vec<String> = unique_countries.into_iter().collect();
+    countries.sort();
+    countries.insert(0, "all".to_string());
+
+    MapResults {map_data, countries}
+}
+
+fn normalize_amount(x: f32, min: f32, max: f32) -> f32 {
+    let base_size = 4.0;
+    let scale_factor = 35.0;
+    if x <= min {
+        return base_size;
+    }
+    base_size + scale_factor * (x - min) / (max - min)
+}
+
+fn make_map_text(year: &str, country: &str) -> String {
+    if year == "all" {
+        format!("{} (10 yrs.): ", country)
+    } else {
+        format!("{} in {}: ", country, year)
+    }
 }
