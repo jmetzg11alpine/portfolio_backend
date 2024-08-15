@@ -73,7 +73,7 @@ pub fn process_agency_data(
 }
 
 #[derive(FromRow)]
-pub struct ForeignAidMapResults {
+struct ForeignAidMapResults {
     country: String,
     amount: f32,
     lat: f32,
@@ -81,7 +81,7 @@ pub struct ForeignAidMapResults {
 }
 
 #[derive(Serialize)]
-pub struct MapData {
+struct MapData {
     lat: f32,
     lng: f32,
     text: String,
@@ -101,7 +101,7 @@ pub async fn make_map_data(year: &str, pool: &MySqlPool) -> MapResults {
     } else {
         String::from("SELECT * FROM foreign_aid")
     };
-   let results = sqlx::query_as::<_, ForeignAidMapResults>(&year_query).fetch_all(pool).await.expect("Failed to fetch data");
+   let results = sqlx::query_as::<_, ForeignAidMapResults>(&year_query).fetch_all(pool).await.expect("Failed to fetch map data");
 
     prep_map_data(results, &year)
 }
@@ -161,5 +161,67 @@ fn make_map_text(year: &str, country: &str) -> String {
         format!("{} (10 yrs.): ", country)
     } else {
         format!("{} in {}: ", country, year)
+    }
+}
+
+#[derive(FromRow)]
+struct ForeignAidBarQuery{
+    amount: f32,
+    year: i32
+}
+
+#[derive(Serialize)]
+struct BarData {
+    year: i32,
+    amount: f32,
+}
+
+#[derive(Serialize)]
+pub struct BarResults {
+    bar_data: Vec<BarData>,
+    total_amount: f32
+}
+
+
+pub async fn make_bar_data(year: &str, country: &str, pool: &MySqlPool) -> BarResults {
+    let country_query = if country != "all" {
+        format!("SELECT amount, year FROM foreign_aid WHERE country = '{}'", country)
+    } else {
+        String::from("SELECT amount, year from foreign_aid")
+    };
+    let results = sqlx::query_as::<_, ForeignAidBarQuery>(&country_query)
+        .fetch_all(pool)
+        .await
+        .expect("Failed to fetch bar data");
+
+    let mut bar_data_map: HashMap<i32, f32> = (2015..2025)
+        .map(|year| (year as i32, 0.0))
+        .collect();
+
+    for aid in results {
+        *bar_data_map.entry(aid.year).or_insert(0.0) += aid.amount;
+    }
+
+    let bar_data: Vec<BarData> = bar_data_map
+        .into_iter()
+        .map(|(year, amount)| BarData {year, amount})
+        .collect();
+
+    let total_amount: f32 = if year == "all" {
+        bar_data.iter()
+            .map(|data| data.amount)
+            .sum()
+    } else {
+        let specific_year: i32 = year.parse().expect("Failed to parse year");
+        bar_data
+            .iter()
+            .filter(|data| data.year == specific_year)
+            .map(|data| data.amount)
+            .sum()
+    };
+
+    BarResults {
+        bar_data,
+        total_amount
     }
 }

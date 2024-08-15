@@ -27,7 +27,6 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(pool.clone()))
             .service(hello)
             .service(budget::endpoints::get_agency)
-            .service(budget::endpoints::get_countries)
             .service(budget::endpoints::post_foreign_aid)
             .service(budget::endpoints::get_comparison)
             .service(budget::endpoints::get_info)

@@ -1,8 +1,8 @@
 use actix_web::{post, get, web, HttpResponse, Responder};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use sqlx::{MySqlPool, query_as};
 use serde_json::json;
-use crate::budget::helpers::{process_agency_data, AgencyBudget, make_map_data};
+use crate::budget::helpers::{process_agency_data, AgencyBudget, make_map_data, make_bar_data, MapResults, BarResults};
 
 
 #[get("/agency")]
@@ -27,41 +27,29 @@ async fn get_agency(pool: web::Data<MySqlPool>) -> impl Responder {
     }
 }
 
-#[derive(Serialize)]
-struct Country{
-    country: Option<String>,
-}
-
-#[get("/get_countries")]
-async fn get_countries(pool: web::Data<MySqlPool>) -> impl Responder {
-    let result = query_as!(Country, "SELECT DISTINCT country FROM foreign_aid ORDER BY country").fetch_all(pool.get_ref()).await;
-
-    match result {
-        Ok(countries) => {
-            let mut country_names: Vec<String> = countries.into_iter().filter_map(|c| c.country).collect();
-            country_names.insert(0, "all".to_string());
-            HttpResponse::Ok().json(json!({"countries": country_names}))
-        },
-        Err(e) => {
-            eprintln!("Failed to get countries: {}", e);
-            HttpResponse::InternalServerError().json(json!({"error": "Failed to retrieve countries"}))
-        }
-    }
-}
-
-
 #[derive(Deserialize)]
 struct ForeignAidRequest {
     country: String,
     year: String
 }
+
+#[derive(Serialize)]
+struct ForeignAidResponse {
+    map_results: MapResults,
+    bar_results: BarResults
+}
 #[post("/foreign_aid")]
 async fn post_foreign_aid(filters: web::Json<ForeignAidRequest>, pool: web::Data<MySqlPool>) -> impl Responder {
     let ForeignAidRequest {country, year} = filters.into_inner();
 
-    println!("{}, {}", country, year);
-    let results = make_map_data(&year, &pool).await;
-    HttpResponse::Ok().json(results)
+    let map_results = make_map_data(&year, &pool).await;
+    let bar_results = make_bar_data(&year, &country, &pool).await;
+
+    let foreign_aid_response = ForeignAidResponse {
+        map_results,
+        bar_results
+    };
+    HttpResponse::Ok().json(foreign_aid_response)
 }
 
 #[get("/comparison")]
