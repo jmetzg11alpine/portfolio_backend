@@ -1,6 +1,6 @@
 use crate::budget::data::{get_colors, get_renaming_map};
 use serde::Serialize;
-use sqlx::{FromRow, MySqlPool};
+use sqlx::{FromRow, MySqlPool, query_as};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug)]
@@ -202,10 +202,12 @@ pub async fn make_bar_data(year: &str, country: &str, pool: &MySqlPool) -> BarRe
         *bar_data_map.entry(aid.year).or_insert(0.0) += aid.amount;
     }
 
-    let bar_data: Vec<BarData> = bar_data_map
+    let mut bar_data: Vec<BarData> = bar_data_map
         .into_iter()
         .map(|(year, amount)| BarData {year, amount})
         .collect();
+
+    bar_data.sort_by_key(|data| data.year);
 
     let total_amount: f32 = if year == "all" {
         bar_data.iter()
@@ -223,5 +225,59 @@ pub async fn make_bar_data(year: &str, country: &str, pool: &MySqlPool) -> BarRe
     BarResults {
         bar_data,
         total_amount
+    }
+}
+
+
+#[derive(Serialize)]
+struct ComparisonQuery {
+    year: Option<i32>,
+    name: Option<String>,
+    amount: Option<f32>,
+}
+
+#[derive(Serialize)]
+pub struct ComparisonResults {
+    data: HashMap<String, Vec<(i32, i32)>>,
+    x_labels: Vec<i32>,
+    agencies: Vec<String>,
+}
+
+pub async fn make_comparison_data(pool: &MySqlPool) -> ComparisonResults {
+    let results = query_as!(
+        ComparisonQuery,
+        "SELECT year, name, amount FROM function_spending"
+    )
+    .fetch_all(pool)
+    .await
+    .expect("Failed to get comparison function spending data");
+
+    let mut data: HashMap<String, Vec<(i32, i32)>> = HashMap::new();
+    let mut x_labels: HashSet<i32> = HashSet::new();
+    let mut agencies: HashSet<String> = HashSet::new();
+
+    for result in results {
+        if let(Some(year), Some(name), Some(amount)) = (result.year, result.name, result.amount) {
+            let value = (amount / 1_000_000_000.0).round() as i32;
+            data.entry(name.clone()).or_insert_with(Vec::new).push((year, value));
+            x_labels.insert(year);
+            agencies.insert(name);
+        }
+    }
+
+    let mut x_labels: Vec<i32> = x_labels.into_iter().collect();
+    x_labels.sort();
+
+    let mut agencies: Vec<String> = agencies.into_iter().collect();
+    agencies.sort();
+
+    for values in data.values_mut() {
+        values.sort_by(|a, b| a.0.cmp(&b.0));
+    }
+
+    ComparisonResults {
+        data,
+        x_labels,
+        agencies
     }
 }

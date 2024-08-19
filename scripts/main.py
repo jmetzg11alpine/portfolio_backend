@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from base import Base
 from agency import get_agency_data
 from foreign_aid import get_foreign_aid
+from function_spending import get_function_spending
 
 load_dotenv()
 
@@ -38,4 +39,5 @@ if __name__ == "__main__":
     if session:
         get_agency_data(session)
         get_foreign_aid(session)
+        get_function_spending(session)
         session.close()

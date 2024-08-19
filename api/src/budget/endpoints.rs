@@ -2,13 +2,18 @@ use actix_web::{post, get, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use sqlx::{MySqlPool, query_as};
 use serde_json::json;
-use crate::budget::helpers::{process_agency_data, AgencyBudget, make_map_data, make_bar_data, MapResults, BarResults};
+use crate::budget::helpers::{process_agency_data, AgencyBudget, make_map_data, make_bar_data, MapResults, BarResults, make_comparison_data};
 
 
 #[get("/agency")]
 async fn get_agency(pool: web::Data<MySqlPool>) -> impl Responder {
 
-    let result = query_as!(AgencyBudget, "Select agency, budget FROM agency_budget order by budget desc").fetch_all(pool.get_ref()).await;
+    let result = query_as!(
+            AgencyBudget,
+            "Select agency, budget FROM agency_budget order by budget desc"
+        )
+        .fetch_all(pool.get_ref())
+        .await;
 
     match result {
       Ok(rows) => {
@@ -52,14 +57,18 @@ async fn post_foreign_aid(filters: web::Json<ForeignAidRequest>, pool: web::Data
     HttpResponse::Ok().json(foreign_aid_response)
 }
 
+
+
 #[get("/comparison")]
-async fn get_comparison() -> impl Responder {
-    println!("GET comparison");
-    HttpResponse::Ok().json(json!({"data": "some data"}))
+async fn get_comparison(pool: web::Data<MySqlPool>) -> impl Responder {
+    let response = make_comparison_data(&pool).await;
+    HttpResponse::Ok().json(response)
 }
+
 
 #[get("/info")]
 async fn get_info() -> impl Responder {
     println!("GET info");
+
     HttpResponse::Ok().json(json!({"data": "some data"}))
 }
