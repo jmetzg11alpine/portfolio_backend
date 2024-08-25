@@ -1,0 +1,11 @@
+FROM rust:latest
+
+WORKDIR /app
+
+COPY target/release/api /app/
+
+COPY .env /app/.env
+
+EXPOSE 8080
+
+CMD ["/app/api"]

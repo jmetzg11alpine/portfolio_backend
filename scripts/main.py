@@ -1,4 +1,3 @@
-from urllib.parse import quote
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import os
@@ -8,12 +7,12 @@ from base import Base
 from agency import get_agency_data
 from foreign_aid import get_foreign_aid
 from function_spending import get_function_spending
+from sql_dump import create_sql_dump
 
 load_dotenv()
 
 password = os.getenv('MYSQL_PASSWORD')
-password_quoted = quote(password)
-DATABASE_URL = os.getenv('MYSQL_URL').replace("<password>", password_quoted)
+DATABASE_URL = os.getenv('MYSQL_URL').replace("<password>", password)
 
 
 def connect_to_database(url, max_attemps=10, delay_seconds=5):
@@ -41,3 +40,5 @@ if __name__ == "__main__":
         get_foreign_aid(session)
         get_function_spending(session)
         session.close()
+
+    create_sql_dump()

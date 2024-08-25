@@ -4,6 +4,9 @@ api/target/
 api/Cargo.lock
 Cargo.lock
 
+api/.env
+
 scripts/venv
 scripts/data/*
+scripts/sql_dump/*
 scripts/__pycache__

@@ -64,11 +64,3 @@ async fn get_comparison(pool: web::Data<MySqlPool>) -> impl Responder {
     let response = make_comparison_data(&pool).await;
     HttpResponse::Ok().json(response)
 }
-
-
-#[get("/info")]
-async fn get_info() -> impl Responder {
-    println!("GET info");
-
-    HttpResponse::Ok().json(json!({"data": "some data"}))
-}
