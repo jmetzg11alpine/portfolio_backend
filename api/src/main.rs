@@ -39,6 +39,7 @@ async fn main() -> std::io::Result<()> {
                     .allowed_origin("http://localhost:5173")
                     .allowed_origin("http://localhost")
                     .allowed_origin("http://192.168.1.241")
+                    .allowed_origin("https://jesse-metzger.com")
                     .allowed_methods(vec!["GET", "POST"])
                     .allowed_headers(vec![actix_web::http::header::CONTENT_TYPE])
                     .max_age(3600)
