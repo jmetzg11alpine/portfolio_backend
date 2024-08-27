@@ -1,8 +1,11 @@
 api/target/
+api/.cargo/
+api/.sqlx/
 **/*.rs.bk
 
 api/Cargo.lock
 Cargo.lock
+
 
 api/.env
 
