@@ -1,22 +1,18 @@
 package main
 
 import (
-	"net/http"
+	"backend/config"
+	"backend/urls"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	// Create a new Gin router
-	r := gin.Default()
+	router := gin.Default()
 
-	// Define a simple route
-	r.GET("/", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "Hello, Woorld!",
-		})
-	})
+	config.ConnectDatabase()
 
-	// Start the Gin server on port 8080
-	r.Run(":8080")
+	urls.InitializeRoutes(router)
+
+	router.Run(":8080")
 }
