@@ -11,21 +11,8 @@ func InitializeRoutes(router *gin.Engine) {
 	{
 		homeRoutes.GET("", controllers.GetHome)
 	}
+	govRouters := router.Group("/gov")
+	{
+		govRouters.GET("/agency", controllers.GetAgencyHandler)
+	}
 }
-
-// make different beging endpoints:
-// routes/url.go
-// package routes
-
-// import (
-//     "my-backend/controllers"
-//     "github.com/gin-gonic/gin"
-// )
-
-// func InitializeRoutes(router *gin.Engine) {
-//     itemRoutes := router.Group("/items")
-//     {
-//         itemRoutes.GET("/", controllers.GetItems)
-//         itemRoutes.POST("/", controllers.CreateItem)
-//     }
-// }
