@@ -47,7 +47,6 @@ var colors = []string{
 type MainEntry struct {
 	Label           string  `json:"label"`
 	Value           float32 `json:"value"`
-	Tooltip         string  `json:"tooltip"`
 	BackgroundColor string  `json:"backgroundColor"`
 }
 
@@ -57,18 +56,17 @@ type SimpleEntry struct {
 }
 
 func getAgencyAndColor(i int, agency string) (string, string) {
-	color := colors[i%len(colors)]
+	color := colors[i%9]
 	if renamed, exists := renaming[agency]; exists {
 		return renamed, color
 	}
 	return agency, color
 }
 
-func makeMainEntry(label, tooltip, color string, value float32) *MainEntry {
+func makeMainEntry(label, color string, value float32) *MainEntry {
 	return &MainEntry{
 		Label:           label,
 		Value:           value,
-		Tooltip:         tooltip,
 		BackgroundColor: fmt.Sprintf("rgba(%s, 1)", color),
 	}
 }
@@ -97,7 +95,7 @@ func GetAgencyData() ([]*MainEntry, []*MainEntry, []*SimpleEntry, error) {
 			continue
 		}
 		shortName, color := getAgencyAndColor(counter, label)
-		entry := makeMainEntry(shortName, label, color, value)
+		entry := makeMainEntry(shortName, color, value)
 
 		switch {
 		case counter < 9:
@@ -114,10 +112,10 @@ func GetAgencyData() ([]*MainEntry, []*MainEntry, []*SimpleEntry, error) {
 		counter++
 	}
 	mainData = append(mainData, makeMainEntry(
-		"other", "break down in other graph", colors[9], mainOtherValue,
+		"other agencies", colors[9], mainOtherValue,
 	))
 	otherData = append(otherData, makeMainEntry(
-		fmt.Sprintf("%d others", len(remainingData)), "break down described below", colors[9], otherOtherValue,
+		fmt.Sprintf("%d others", len(remainingData)), colors[9], otherOtherValue,
 	))
 
 	if err = rows.Err(); err != nil {

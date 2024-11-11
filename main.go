@@ -9,6 +9,7 @@ import (
 
 func main() {
 	router := gin.Default()
+	router.Use(config.SetupCors())
 
 	config.ConnectDatabase()
 

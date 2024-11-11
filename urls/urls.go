@@ -14,5 +14,6 @@ func InitializeRoutes(router *gin.Engine) {
 	govRouters := router.Group("/gov")
 	{
 		govRouters.GET("/agency", controllers.GetAgencyHandler)
+		govRouters.GET("/foreign-aid", controllers.GetForeignAidHandler)
 	}
 }

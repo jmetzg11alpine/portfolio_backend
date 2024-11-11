@@ -22,3 +22,11 @@ func GetAgencyHandler(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, response)
 }
+
+func GetForeignAidHandler(c *gin.Context) {
+	data := gov.GetForeignAidData()
+	response := gin.H{
+		"data": data,
+	}
+	c.JSON(http.StatusOK, response)
+}
