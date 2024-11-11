@@ -3,6 +3,7 @@ package gov
 import (
 	"backend/config"
 	"context"
+	"fmt"
 	"log"
 	"time"
 )
@@ -30,50 +31,99 @@ var renaming = map[string]string{
 	"Pension Benefit Guaranty Corporation":        "Pension",
 }
 
-func getAgencyName(agency string) string {
-	if renamed, exists := renaming[agency]; exists {
-		return renamed
-	}
-	return agency
+var colors = []string{
+	"0, 128, 128",  // Teal
+	"255, 99, 71",  // Tomato
+	"124, 252, 0",  // Lawn Green
+	"70, 130, 180", // Steel Blue
+	"255, 215, 0",  // Gold
+	"0, 191, 255",  // Deep Sky Blue
+	"255, 69, 0",   // Orange Red
+	"138, 43, 226", // Blue Violet
+	"60, 179, 113", // Medium Sea Green
+	"218, 165, 32", // Golden Rod
 }
 
-type DataEntry struct {
+type MainEntry struct {
+	Label           string  `json:"label"`
+	Value           float32 `json:"value"`
+	Tooltip         string  `json:"tooltip"`
+	BackgroundColor string  `json:"backgroundColor"`
+}
+
+type SimpleEntry struct {
 	Label string  `json:"label"`
 	Value float32 `json:"value"`
 }
 
-func GetAgencyData() ([], [] DataEntry, error) {
+func getAgencyAndColor(i int, agency string) (string, string) {
+	color := colors[i%len(colors)]
+	if renamed, exists := renaming[agency]; exists {
+		return renamed, color
+	}
+	return agency, color
+}
+
+func makeMainEntry(label, tooltip, color string, value float32) *MainEntry {
+	return &MainEntry{
+		Label:           label,
+		Value:           value,
+		Tooltip:         tooltip,
+		BackgroundColor: fmt.Sprintf("rgba(%s, 1)", color),
+	}
+}
+
+func GetAgencyData() ([]*MainEntry, []*MainEntry, []*SimpleEntry, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	rows, err := config.DB.Query(ctx, "SELECT agency, budget FROM agency_budget")
+	rows, err := config.DB.Query(ctx, "SELECT agency, budget FROM agency_budget ORDER BY budget DESC")
 	if err != nil {
 		log.Printf("Query error: %v\n", err)
-		return nil, err
+		return nil, nil, nil, err
 	}
 	defer rows.Close()
 
-	var MainData []DataEntry
-	var OtherData []DataEntry
+	var mainData, otherData []*MainEntry
+	var remainingData []*SimpleEntry
+	var mainOtherValue, otherOtherValue float32
+	counter := 0
 
 	for rows.Next() {
 		var label string
 		var value float32
 		if err := rows.Scan(&label, &value); err != nil {
 			log.Printf("Row scan error: %v\n", err)
+			continue
 		}
-		entry := MainData{
-			Label: getAgencyName(label),
-			Value: value,
+		shortName, color := getAgencyAndColor(counter, label)
+		entry := makeMainEntry(shortName, label, color, value)
+
+		switch {
+		case counter < 9:
+			mainData = append(mainData, entry)
+		case counter < 18:
+			mainOtherValue += value
+			otherData = append(otherData, entry)
+		default:
+			mainOtherValue += value
+			otherOtherValue += value
+			remainingData = append(remainingData, &SimpleEntry{Label: label, Value: value})
 		}
 
-		data = append(data, entry)
+		counter++
 	}
+	mainData = append(mainData, makeMainEntry(
+		"other", "break down in other graph", colors[9], mainOtherValue,
+	))
+	otherData = append(otherData, makeMainEntry(
+		fmt.Sprintf("%d others", len(remainingData)), "break down described below", colors[9], otherOtherValue,
+	))
 
 	if err = rows.Err(); err != nil {
 		log.Printf("Rows iteration error: %v\n", err)
-		return nil, err
+		return nil, nil, nil, err
 	}
 
-	return data, nil
+	return mainData, otherData, remainingData, nil
 }

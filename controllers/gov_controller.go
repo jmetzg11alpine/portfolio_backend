@@ -9,9 +9,16 @@ import (
 )
 
 func GetAgencyHandler(c *gin.Context) {
-	data, err := gov.GetAgencyData()
+	mainData, otherData, remainingData, err := gov.GetAgencyData()
 	if err != nil {
 		log.Printf("error calling GetAgencyHandler: %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get agency data"})
+		return
 	}
-	c.JSON(http.StatusOK, data)
+	response := gin.H{
+		"mainData":      mainData,
+		"otherData":     otherData,
+		"remainingData": remainingData,
+	}
+	c.JSON(http.StatusOK, response)
 }
