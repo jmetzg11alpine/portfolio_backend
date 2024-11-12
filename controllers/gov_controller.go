@@ -23,8 +23,19 @@ func GetAgencyHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+type ForeignAidRequest struct {
+	Country string `json:"country" binding:"required"`
+	Year    string `json:"year" binding:"required"`
+}
+
 func GetForeignAidHandler(c *gin.Context) {
-	data := gov.GetForeignAidData()
+	var request ForeignAidRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	data := gov.GetForeignAidData(request.Country, request.Year)
 	response := gin.H{
 		"data": data,
 	}
