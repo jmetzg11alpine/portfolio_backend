@@ -23,21 +23,37 @@ func GetAgencyHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-type ForeignAidRequest struct {
-	Country string `json:"country" binding:"required"`
-	Year    string `json:"year" binding:"required"`
+type ForeignAidMapRequest struct {
+	Year string `json:"year" binding:"required"`
 }
 
-func GetForeignAidHandler(c *gin.Context) {
-	var request ForeignAidRequest
+func GetForeignAidMapHandler(c *gin.Context) {
+	var request ForeignAidMapRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	data := gov.GetForeignAidData(request.Country, request.Year)
+	mapData, countries := gov.GetForeignAidMapData(request.Year)
 	response := gin.H{
-		"data": data,
+		"mapData":   mapData,
+		"countries": countries,
+	}
+	c.JSON(http.StatusOK, response)
+}
+
+type ForeignAidCountryRequest struct {
+	Country string `json:"country" binding:"required"`
+}
+
+func GetForeignAidBarHandler(c *gin.Context) {
+	var request ForeignAidCountryRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	barData := gov.GetForeignAidBarData(request.Country)
+	response := gin.H{
+		"barData": barData,
 	}
 	c.JSON(http.StatusOK, response)
 }
