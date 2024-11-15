@@ -5,6 +5,8 @@ import (
 	"context"
 	"log"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type BarData struct {
@@ -16,81 +18,58 @@ func GetForeignAidBarData(country string) *[]BarData {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	barData := getBarData(country, ctx)
+	query, params := buildBarQuery(country)
+	rows, err := executeBarQuery(ctx, query, params)
+	if err != nil {
+		log.Fatalf("Failed to execute bar query: %v", err)
+	}
+
+	barData := processBarRows(rows)
 
 	return barData
 }
 
-func getBarData(country string, ctx context.Context) *[]BarData {
+func buildBarQuery(country string) (string, []interface{}) {
 	if country == "all" {
-		return getAllData(ctx)
+		return `
+			SELECT year, SUM(amount) as total_amount
+			FROM foreign_aid
+			GROUP BY year
+			ORDER BY year
+		`, nil
 	} else {
-		return getSpecificData(country, ctx)
+		return `
+			SELECT year, amount
+			FROM foreign_aid
+			WHERE country = $1
+			GROUP BY year, amount
+			ORDER BY year
+		`, []interface{}{country}
 	}
 }
 
-func getAllData(ctx context.Context) *[]BarData {
-	query := `
-		SELECT year, SUM(amount) as total_amount
-		FROM foreign_aid
-		GROUP BY year
-		ORDER BY year
-	`
-	rows, err := config.DB.Query(ctx, query)
-	if err != nil {
-		log.Fatalf("Failed to exectue bar data all countries query: %v", err)
-		return nil
-	}
-	defer rows.Close()
-
-	var data []BarData
-
-	for rows.Next() {
-		var aid BarData
-		err := rows.Scan(&aid.X, &aid.Y)
-		if err != nil {
-			log.Printf("Failed to scan row in bar data all countries: %v", err)
-			continue
-		}
-		data = append(data, aid)
-	}
-	if err := rows.Err(); err != nil {
-		log.Fatalf("error iteration over rows in bar data all countries: %v", err)
-		return nil
-	}
-	return &data
-}
-
-func getSpecificData(country string, ctx context.Context) *[]BarData {
-	query := `
-		SELECT year, amount
-		FROM foreign_aid
-		WHERE country = $1
-		GROUP BY year, amount
-		ORDER BY year
-	`
-	var params []interface{}
-	params = append(params, country)
+func executeBarQuery(ctx context.Context, query string, params []interface{}) (pgx.Rows, error) {
 	rows, err := config.DB.Query(ctx, query, params...)
 	if err != nil {
-		log.Fatalf("Failed to exectue bar data all countries query: %v", err)
-		return nil
+		return nil, err
 	}
-	defer rows.Close()
+	return rows, nil
+}
 
+func processBarRows(rows pgx.Rows) *[]BarData {
 	var data []BarData
 
 	for rows.Next() {
 		var aid BarData
 		err := rows.Scan(&aid.X, &aid.Y)
 		if err != nil {
-			log.Printf("Failed to scan row in bar data all countries: %v", err)
+			log.Printf("Failed to scan row for bar data: %v", err)
 			continue
 		}
 		data = append(data, aid)
 	}
 	if err := rows.Err(); err != nil {
-		log.Fatalf("error iteration over rows in bar data all countries: %v", err)
+		log.Fatalf("erro iteration over rows for bar data: %v", err)
 		return nil
 	}
 	return &data

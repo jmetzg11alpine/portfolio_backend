@@ -6,6 +6,8 @@ import (
 	"log"
 	"sort"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type Entry struct {
@@ -23,76 +25,44 @@ func GetForeignAidMapData(year string) (*[]MapData, []string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	mapData, countries := getCountryData(year, ctx)
+	query, params := buildMapQuery(year)
+	rows, err := executeMapQuery(ctx, query, params)
+	if err != nil {
+		log.Fatalf("Failed to execute map query: %v", err)
+		return nil, nil
+	}
+	defer rows.Close()
+
+	mapData, countries := processMapRows(rows)
 
 	return mapData, countries
 }
 
-func getCountryData(year string, ctx context.Context) (*[]MapData, []string) {
+func buildMapQuery(year string) (string, []interface{}) {
 	if year == "all" {
-		return getCountryDataGroupedByCountry(ctx)
+		return `
+			SELECT country, SUM(amount) as total_amount, lat, lng
+			FROM foreign_aid
+			GROUP BY country, lat, lng
+		`, nil
 	} else {
-		return getCountryDataByYear(year, ctx)
+		return `
+			SELECT country, amount, lat, lng
+			FROM foreign_aid
+			WHERE year = $1
+		`, []interface{}{year}
 	}
 }
 
-func getCountryDataGroupedByCountry(ctx context.Context) (*[]MapData, []string) {
-	query := `
-		SELECT country, SUM(amount) as total_amount, lat, lng
-		FROM foreign_aid
-		GROUP BY country, lat, lng
-	`
-
-	rows, err := config.DB.Query(ctx, query)
-	if err != nil {
-		log.Fatalf("Failed to exectue grouped by country query %v", err)
-		return nil, nil
-	}
-	defer rows.Close()
-
-	var data []MapData
-	countrySet := make(map[string]bool)
-
-	for rows.Next() {
-		var aid MapData
-		err := rows.Scan(&aid.Country, &aid.Amount, &aid.Lat, &aid.Lng)
-		if err != nil {
-			log.Printf("Failed to scan row in grouped data: %v", err)
-			continue
-		}
-		data = append(data, aid)
-		countrySet[aid.Country] = true
-	}
-	if err := rows.Err(); err != nil {
-		log.Fatalf("Error iteration over rows in grouped data: %v", err)
-		return nil, nil
-	}
-
-	var countries []string
-	for country := range countrySet {
-		countries = append(countries, country)
-	}
-	sort.Strings(countries)
-	countries = append([]string{"all"}, countries...)
-	return &data, countries
-}
-
-func getCountryDataByYear(year string, ctx context.Context) (*[]MapData, []string) {
-	query := `
-		SELECT country, amount, lat, lng
-		FROM foreign_aid
-		WHERE year = $1
-	`
-	var params []interface{}
-	params = append(params, year)
-
+func executeMapQuery(ctx context.Context, query string, params []interface{}) (pgx.Rows, error) {
 	rows, err := config.DB.Query(ctx, query, params...)
 	if err != nil {
-		log.Fatalf("Failed to execute country query by year %v:", err)
-		return nil, nil
+		return nil, err
 	}
-	defer rows.Close()
+	return rows, nil
+}
 
+func processMapRows(rows pgx.Rows) (*[]MapData, []string) {
 	var data []MapData
 	countrySet := make(map[string]bool)
 
@@ -100,7 +70,7 @@ func getCountryDataByYear(year string, ctx context.Context) (*[]MapData, []strin
 		var aid MapData
 		err := rows.Scan(&aid.Country, &aid.Amount, &aid.Lat, &aid.Lng)
 		if err != nil {
-			log.Printf("Failed to scan row in country data: %v", err)
+			log.Printf("Falied to scan row: %v", err)
 			continue
 		}
 		data = append(data, aid)
@@ -108,7 +78,7 @@ func getCountryDataByYear(year string, ctx context.Context) (*[]MapData, []strin
 	}
 
 	if err := rows.Err(); err != nil {
-		log.Fatalf("Error iteration rows: %v", err)
+		log.Fatalf("Error iterating over rows: %v", err)
 		return nil, nil
 	}
 
@@ -118,5 +88,6 @@ func getCountryDataByYear(year string, ctx context.Context) (*[]MapData, []strin
 	}
 	sort.Strings(countries)
 	countries = append([]string{"all"}, countries...)
+
 	return &data, countries
 }
