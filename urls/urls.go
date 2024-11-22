@@ -16,5 +16,6 @@ func InitializeRoutes(router *gin.Engine) {
 		govRouters.GET("/agency", controllers.GetAgencyHandler)
 		govRouters.POST("/foreign-aid-map", controllers.GetForeignAidMapHandler)
 		govRouters.POST("/foreign-aid-bar", controllers.GetForeignAidBarHandler)
+		govRouters.GET("/comparison", controllers.GetComparisonHandler)
 	}
 }

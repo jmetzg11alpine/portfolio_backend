@@ -57,3 +57,14 @@ func GetForeignAidBarHandler(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, response)
 }
+
+func GetComparisonHandler(c *gin.Context) {
+	data, years, agencies := gov.GetComparisonData()
+
+	response := gin.H{
+		"data":     data,
+		"years":    years,
+		"agencies": agencies,
+	}
+	c.JSON(http.StatusOK, response)
+}
