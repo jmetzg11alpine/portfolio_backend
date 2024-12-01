@@ -6,13 +6,14 @@ import (
 	"backend/urls"
 	"log"
 	"os"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
 )
 
 func main() {
+	gin.SetMode(gin.ReleaseMode)
+
 	logFile, err := os.OpenFile("app.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Printf("Failed to open log file: %v", err)
@@ -20,17 +21,16 @@ func main() {
 	defer logFile.Close()
 
 	router := gin.Default()
+	if err := router.SetTrustedProxies(nil); err != nil {
+		log.Fatalf("failed to set trusted proxies: %v", err)
+	}
 	router.Use(config.SetupCors())
 
 	config.ConnectDatabase()
 
 	urls.InitializeRoutes(router)
 
-	nyLocation, err := time.LoadLocation("America/New_York")
-	if err != nil {
-		log.Printf("Failed to load New Yor timezone: %v", err)
-	}
-	c := cron.New(cron.WithLocation(nyLocation))
+	c := cron.New()
 	_, err = c.AddFunc("0 11 * * 1-5", func() {
 		log.Println("Running scheduled alpaca script...")
 		err := alpaca_script.Run()

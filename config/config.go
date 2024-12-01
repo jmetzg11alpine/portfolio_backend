@@ -16,8 +16,10 @@ import (
 var DB *pgxpool.Pool
 
 func ConnectDatabase() {
-	if err := godotenv.Load(); err != nil {
-		log.Fatalf("error loading .env file: %v\n", err)
+	if os.Getenv("MODE") != "LIVE" {
+		if err := godotenv.Load(); err != nil {
+			log.Printf("Warning: No .env file found, using environment variables directly,\n")
+		}
 	}
 
 	mode := os.Getenv("MODE")
@@ -57,7 +59,9 @@ func ConnectDatabase() {
 
 func SetupCors() gin.HandlerFunc {
 	return cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"}, // Add more allowed origins if needed
+		AllowOrigins: []string{
+			"http://localhost:5173", "https://portfolio-frontend-jesse-metzger.fly.dev", "https://jesse-metzger.com/",
+		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -65,3 +69,16 @@ func SetupCors() gin.HandlerFunc {
 		MaxAge:           12 * time.Hour,
 	})
 }
+
+// func SetupCors() gin.HandlerFunc {
+// 	return cors.New(cors.Config{
+// 		AllowOrigins: []string{
+// 			"*",
+// 		},
+// 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+// 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+// 		ExposeHeaders:    []string{"Content-Length"},
+// 		AllowCredentials: true,
+// 		MaxAge:           12 * time.Hour,
+// 	})
+// }
