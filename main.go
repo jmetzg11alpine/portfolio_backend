@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/robfig/cron/v3"
+	"github.com/robfig/cron"
 )
 
 func main() {
@@ -16,9 +16,12 @@ func main() {
 
 	logFile, err := os.OpenFile("app.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
-		log.Printf("Failed to open log file: %v", err)
+		log.Fatalf("Failed to open log file: %v", err)
 	}
-	defer logFile.Close()
+
+	log.SetOutput(logFile)
+
+	log.Println("Go app started")
 
 	router := gin.Default()
 	if err := router.SetTrustedProxies(nil); err != nil {
@@ -30,8 +33,11 @@ func main() {
 
 	urls.InitializeRoutes(router)
 
+	log.Println("Adding cron job to run at 11am ET, Monday to Friday")
 	c := cron.New()
-	_, err = c.AddFunc("0 11 * * 1-5", func() {
+	// second, minute, hour, day, month, day of week
+	// sceduled to run 11AM ET, Monday - Friday
+	err = c.AddFunc("0 0 11 * * 1-5", func() {
 		log.Println("Running scheduled alpaca script...")
 		err := alpaca_script.Run()
 		if err != nil {

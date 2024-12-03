@@ -20,8 +20,7 @@ func Run() error {
 		etfValues := database.UpdateReserves(reserves, balance)
 
 		// get last day market was open
-		// lastDay := alpaca.GetLastTradingDay()
-		lastDay := "2024-11-27"
+		lastDay := alpaca.GetLastTradingDay()
 
 		// update each eft based on percent change
 		for _, etf := range database.EtfList {
