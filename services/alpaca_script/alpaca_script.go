@@ -28,6 +28,7 @@ func Run() error {
 			currentPrice := alpaca.GetCurrentPrice(etf)
 			percentChange := ((currentPrice - previousPrice) / previousPrice) * 100
 			amountSpent := alpaca.InvestInEtf(etf, percentChange, etfValues[etf])
+			log.Printf("ETF: %s, previouse: %f, current: %f, percent change: %f, amount spent: %f\n", etf, previousPrice, currentPrice, percentChange, amountSpent)
 			database.UpdateDabase(etf, amountSpent, percentChange)
 		}
 
