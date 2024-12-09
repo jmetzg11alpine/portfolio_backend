@@ -18,4 +18,9 @@ func InitializeRoutes(router *gin.Engine) {
 		govRouters.POST("/foreign-aid-bar", controllers.GetForeignAidBarHandler)
 		govRouters.GET("/comparison", controllers.GetComparisonHandler)
 	}
+	etfRouters := router.Group("/etf")
+	{
+		etfRouters.GET("/reserves", controllers.GetETFReserveData)
+		etfRouters.POST("/stocks", controllers.GetStockData)
+	}
 }
