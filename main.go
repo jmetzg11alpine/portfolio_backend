@@ -33,11 +33,11 @@ func main() {
 
 	urls.InitializeRoutes(router)
 
-	log.Println("Adding cron job to run at 11am ET, Monday to Friday")
+	log.Println("Adding cron job to run at 14:10 ET, Monday to Friday")
 	c := cron.New()
 	// second, minute, hour, day, month, day of week
 	// sceduled to run 11AM ET, Monday - Friday
-	err = c.AddFunc("0 0 11 * * 1-5", func() {
+	err = c.AddFunc("0 10 14 * * 1-5", func() {
 		log.Println("Running scheduled alpaca script...")
 		err := alpaca_script.Run()
 		if err != nil {

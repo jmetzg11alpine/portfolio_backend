@@ -48,6 +48,7 @@ func Run() error {
 			if !reserveOk {
 				log.Printf("no reserve found for %s", symbol)
 			}
+			percentChange = percentChange * 100
 			amountSpent := alpaca.InvestInEtf(symbol, percentChange, reserve)
 			log.Printf("ETF: %s, percent change: %f, amount spent: %f\n", symbol, percentChange, amountSpent)
 			database.UpdateDabase(symbol, amountSpent, percentChange, unrealizedPlpc, marketValue)
