@@ -3,6 +3,7 @@ package alpaca_script
 import (
 	"backend/services/alpaca"
 	"backend/services/database"
+	"fmt"
 	"log"
 )
 
@@ -17,19 +18,40 @@ func Run() error {
 		balance := alpaca.CheckAccount()
 
 		// updating the amount of money put aside for each ETF
-		etfValues := database.UpdateReserves(reserves, balance)
+		etfReserves := database.UpdateReserves(reserves, balance)
 
-		// get last day market was open
-		lastDay := alpaca.GetLastTradingDay()
+		// get the positions of the etfs
+		positions, err := alpaca.GetPositions()
+		if err != nil {
+			log.Printf("Failed to get positions: %v\n", err)
+		}
+		fmt.Println(positions)
 
-		// update each eft based on percent change
-		for _, etf := range database.EtfList {
-			previousPrice := alpaca.GetPreviousClose(etf, lastDay)
-			currentPrice := alpaca.GetCurrentPrice(etf)
-			percentChange := ((currentPrice - previousPrice) / previousPrice) * 100
-			amountSpent := alpaca.InvestInEtf(etf, percentChange, etfValues[etf])
-			log.Printf("ETF: %s, previouse: %f, current: %f, percent change: %f, amount spent: %f\n", etf, previousPrice, currentPrice, percentChange, amountSpent)
-			database.UpdateDabase(etf, amountSpent, percentChange)
+		for _, position := range positions {
+			symbol, symbolOk := position["symbol"].(string)
+			percentChange, percentChangeOk := position["change_today"].(float64)
+			unrealizedPlpc, unrealizedPlpcOk := position["unrealized_plpc"].(float64)
+			marketValue, marketValueOk := position["market_value"].(float64)
+			reserve, reserveOk := etfReserves[symbol]
+			if !symbolOk {
+				log.Printf("Invalid symbol type in positioni")
+			}
+			if !percentChangeOk {
+				log.Printf("No percent change for today")
+			}
+			if !unrealizedPlpcOk {
+				log.Printf("Invalid percent change")
+			}
+			if !marketValueOk {
+				log.Printf("Invalid market value")
+			}
+			if !reserveOk {
+				log.Printf("no reserve found for %s", symbol)
+			}
+			amountSpent := alpaca.InvestInEtf(symbol, percentChange, reserve)
+			log.Printf("ETF: %s, percent change: %f, amount spent: %f\n", symbol, percentChange, amountSpent)
+			database.UpdateDabase(symbol, amountSpent, percentChange, unrealizedPlpc, marketValue)
+
 		}
 
 	} else {

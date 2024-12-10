@@ -60,7 +60,7 @@ func ConnectDatabase() {
 func SetupCors() gin.HandlerFunc {
 	return cors.New(cors.Config{
 		AllowOrigins: []string{
-			"http://localhost:5173", "https://portfolio-frontend-jesse-metzger.fly.dev", "https://jesse-metzger.com/",
+			"http://localhost:5173", "https://portfolio-frontend-jesse-metzger.fly.dev", "https://jesse-metzger.com",
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},

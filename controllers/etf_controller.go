@@ -10,8 +10,10 @@ import (
 
 func GetETFReserveData(c *gin.Context) {
 	reserves := etf.GetETFReserves()
+	transactions := etf.GetETFTransactions()
 	response := gin.H{
-		"reserves": reserves,
+		"reserves":     reserves,
+		"transactions": transactions,
 	}
 	c.JSON(http.StatusOK, response)
 }

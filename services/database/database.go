@@ -74,7 +74,7 @@ func UpdateReserves(reserves, balance float64) map[string]float64 {
 	return etfValues
 }
 
-func UpdateDabase(etf string, amountSpent, percentChange float64) {
+func UpdateDabase(etf string, amountSpent, percentChange, unrealizedPlpc, marketValue float64) {
 	ValueQuery := `
 		UPDATE stock_values
 		SET value = value - $1
@@ -87,10 +87,10 @@ func UpdateDabase(etf string, amountSpent, percentChange float64) {
 	}
 
 	recordQuery := `
-		INSERT INTO stock_transactions (stock, percent, value)
-		VALUES ($1, $2, $3)
+		INSERT INTO stock_transactions (stock, percent, value, market_value, unrealized_plpc)
+		VALUES ($1, $2, $3, $4, $5)
 	`
-	_, err = config.DB.Exec(ctx, recordQuery, etf, percentChange, amountSpent)
+	_, err = config.DB.Exec(ctx, recordQuery, etf, percentChange, amountSpent, marketValue, unrealizedPlpc)
 	if err != nil {
 		log.Printf("Failed to update stock_transactions  in UpdateDatabase eft: %s, %v", etf, err)
 	}
