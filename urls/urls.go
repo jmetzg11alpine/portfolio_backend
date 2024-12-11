@@ -20,7 +20,6 @@ func InitializeRoutes(router *gin.Engine) {
 	}
 	etfRouters := router.Group("/etf")
 	{
-		etfRouters.GET("/reserves", controllers.GetETFReserveData)
-		etfRouters.POST("/stocks", controllers.GetStockData)
+		etfRouters.GET("/", controllers.GetETFData)
 	}
 }

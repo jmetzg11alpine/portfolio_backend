@@ -40,3 +40,7 @@
 	[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused
 	127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
 	[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused
+2024/12/11 13:14:03 Go app started
+2024/12/11 13:14:03 Adding cron job to run at 14:10 ET, Monday to Friday
+2024/12/11 14:18:27 Go app started
+2024/12/11 14:18:27 Adding cron job to run at 14:10 ET, Monday to Friday

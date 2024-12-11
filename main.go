@@ -51,3 +51,18 @@ func main() {
 
 	router.Run(":8080")
 }
+
+// func main() {
+
+// 	router := gin.Default()
+// 	if err := router.SetTrustedProxies(nil); err != nil {
+// 		log.Fatalf("failed to set trusted proxies: %v", err)
+// 	}
+// 	router.Use(config.SetupCors())
+
+// 	config.ConnectDatabase()
+
+// 	urls.InitializeRoutes(router)
+
+// 	router.Run(":8080")
+// }
