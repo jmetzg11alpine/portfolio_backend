@@ -53,7 +53,7 @@ func GetETFTransactions() []ETFTransaction {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	rows, err := config.DB.Query(ctx, "SELECT * from stock_transactions ORDER BY created_at DESC")
+	rows, err := config.DB.Query(ctx, "SELECT * from stock_transactions WHERE created_at > '2024-12-016' ORDER BY created_at DESC")
 	if err != nil {
 		log.Printf("Query error in GetETFTransactions: %v", err)
 	}
